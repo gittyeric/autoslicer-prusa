@@ -82,13 +82,13 @@ Warning! Creating lots of .ini settings produces exponential permutations of gco
 
 ## Adding new 3mf project files
 
-Simply add a new .3mf file anywhere in your projects folder and it will be immediately sliced against all `settings/` permutations and show up in the gcode/ folder.
+Simply add a new .3mf file anywhere in your projects folder and it will be immediately sliced against all settings permutations and show up in the gcode/ folder.
 
 ## (Optional): "Live Reload" upload to printers
 
 Simply save a PrusaSlicer project to auto-upload to all your printers!
 
-Edit `index.ts` to include the list of SSH addresses to upload to (hint: you should use `ssh-copy-id` so your printer trusts your local Printer for SSH connections).  Whatever address(es) you use to access your printer(s) with ssh (ex. ssh `pi@myprinter.local`), add to the `rsyncUploadTargets` list.  Alternatively, you can specify a comma-separated `targets` argument on a per-command basis instead of modifying `config.ts`:
+Edit `index.ts` to include the list of SSH addresses to upload to (hint: you should use `ssh-copy-id` so your printer trusts your local Printer for SSH connections).  Whatever address(es) you use to access your printer(s) with ssh (ex. ssh `pi@myprinter.local`), add to the `rsyncUploadTargets` list.  Alternatively, you can specify a comma-separated `targets` argument on a per-command basis instead of modifying `index.ts`:
 
 `npm --targets="pi@printer1.local,pi@10.10.10.10" --prusa=<my-prusaslicer-config-location> --project="<my-absolute-projects-folder-location>" start`
 
@@ -97,4 +97,4 @@ Edit `index.ts` to include the list of SSH addresses to upload to (hint: you sho
 
 If you use Octoprint or Linux to run your printer, you can also tie the gcode generation event to auto-upload the file to all your Octoprint bots using it's built-in folder watch feature.  By default, Octoprint checks for incoming gcode files (after [manually enabling this feature](https://community.octoprint.org/t/watched-folder-doesnt-run-as-well/14618/4)) at `/home/pi/.octoprint/watched`, so you can use the above section to configure appropriate targets such as `pi@10.10.10.10:/home/pi/.octoprint/watched`
 
-Note that massive amounts of files will slow down Octoprint quite a bit with plugins like PrintGenius installed.
+Note that massive amounts of files will slow down Octoprint quite a bit (at least when not printing) with plugins like PrintGenius installed.
