@@ -71,7 +71,9 @@ async function execLogError(cmd: string, args: string[]) {
     try {
         console.info('autoslice: ' + cmd + ' ' + args.join(' '));
         const res = await execa(cmd, args);
-        console.info('autoslice: ' + res.stdout);
+        if (res.stdout.trim().length > 0) {
+            console.info('autoslice: ' + res.stdout);
+        }
     } catch (e) {
         console.error('autoslice: ' + JSON.stringify(e, null, 2));
     }
@@ -181,11 +183,11 @@ async function generateAll(projectsFolder: string, settings: Settings) {
 async function triggerRsyncUploads(gcodeFolder: string) {
     let count = 0;
     const pendingUploads = rsyncUploadTargets.map(async (target) => {
-        const targetWrite = execLogError('rsync', ['-r', gcodeFolder + '/', target]);
+        const targetWrite = execLogError('rsync', ['-r', '-t', gcodeFolder + '/', target]);
         targetWrite.then(() => { console.info(`autoslice: Done full-syncing with ` + target) });
         count++;
         // Wait for the rsync write every X concurrent runs
-        if (count % 4 === 0) {
+        if (count % 10 === 0) {
             await targetWrite;
         }
         return targetWrite;
