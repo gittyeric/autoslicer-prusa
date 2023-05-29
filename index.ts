@@ -179,9 +179,15 @@ async function generateAll(projectsFolder: string, settings: Settings) {
 // Leave the smarts of diff tracking to rsync and just bulk rsync
 // all generated gcode to all rsync targets
 async function triggerRsyncUploads(gcodeFolder: string) {
+    let count = 0;
     const pendingUploads = rsyncUploadTargets.map(async (target) => {
-        const targetWrite = execLogError('scp', ['-r', gcodeFolder + '/', target]);
+        const targetWrite = execLogError('rsync', ['-r', gcodeFolder + '/', target]);
         targetWrite.then(() => { console.info(`autoslice: Done full-syncing with ` + target) });
+        count++;
+        // Wait for the rsync write every X concurrent runs
+        if (count % 4 === 0) {
+            await targetWrite;
+        }
         return targetWrite;
     });
     try {
