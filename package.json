@@ -1,0 +1,40 @@
+{
+  "name": "autoslicer-prusa",
+  "version": "1.0.0",
+  "description": "Auto-slices your Prusa projects into all target runtime gcodes",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx tsc",
+    "start": "npm run build && node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gittyeric/autoslicer-prusa.git"
+  },
+  "keywords": [
+    "auto",
+    "slicer",
+    "prusa",
+    "3mf",
+    "fdm",
+    "3d",
+    "print",
+    "stl",
+    "prusaslicer"
+  ],
+  "type": "module",
+  "author": "gittyeric",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gittyeric/autoslicer-prusa/issues"
+  },
+  "homepage": "https://github.com/gittyeric/autoslicer-prusa#readme",
+  "devDependencies": {
+    "@types/node": "^20.2.5",
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "execa": "^7.1.1",
+    "node-watch": "^0.7.3"
+  }
+}

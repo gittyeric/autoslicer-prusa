@@ -1,0 +1,20 @@
+{
+  "files": [
+    "index.ts"
+  ],
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "nodenext",
+    "types": [
+      "node"
+    ],
+    "allowJs": false,
+    "outDir": "./",
+    "noImplicitAny": false,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}
