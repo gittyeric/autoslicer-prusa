@@ -57,6 +57,7 @@ This program requires Node.js (version 16 or higher) running on a Bash-like term
 Where:
 
 `<my-prusaslicer-config-location>` is the location PrusaSlicer takes you to when navigating to Help -> Show Configuration Folder.
+
 `<my-absolute-projects-folder-location>` is the folder containing your PrusaSlicer .3mf project files (subfolders will also count).
 
 If you see issues such as "Command not found: prusa-slicer", change `prusaSlicerCmd` in `index.ts` to whatever command works for your terminal (ex. `prusa-slicer-console` or `slic3r`).
@@ -69,7 +70,7 @@ The easiest way to install this program to run 24/7 and listen for file changes 
 
 Then add an entry to run autoslicer after every reboot:
 
-`@reboot cd </path/to/>autoslicer-prusa && npm start --prusa=<my-prusaslicer-config-location> --project="<my-absolute-projects-folder-location>"`
+`@reboot cd </path/to/>autoslicer-prusa && npm --prusa=<my-prusaslicer-config-location> --project="<my-absolute-projects-folder-location> start"`
 
 ## Adding new (Printer / Filament / Print Settings) combinations
 
@@ -95,3 +96,5 @@ Edit `index.ts` to include the list of SSH addresses to upload to (hint: you sho
 ## Octoprint End-to-end Automation
 
 If you use Octoprint or Linux to run your printer, you can also tie the gcode generation event to auto-upload the file to all your Octoprint bots using it's built-in folder watch feature.  By default, Octoprint checks for incoming gcode files (after [manually enabling this feature](https://community.octoprint.org/t/watched-folder-doesnt-run-as-well/14618/4)) at `/home/pi/.octoprint/watched`, so you can use the above section to configure appropriate targets such as `pi@10.10.10.10:/home/pi/.octoprint/watched`
+
+Note that massive amounts of files will slow down Octoprint quite a bit with plugins like PrintGenius installed.
