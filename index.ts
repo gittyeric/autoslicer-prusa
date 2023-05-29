@@ -289,7 +289,8 @@ function watchSettingsDir(projectsFolder: string, prusaFolder: string): void {
     }
 
     // Ensure gcode output dir exists
-    if (!fs.existsSync(projectsFolder + '/gcode')) {
+    const gcodeWasInitialized = fs.existsSync(projectsFolder + '/gcode');
+    if (!gcodeWasInitialized) {
         fs.mkdirSync(projectsFolder + '/gcode');
     }
 
@@ -328,6 +329,8 @@ function watchSettingsDir(projectsFolder: string, prusaFolder: string): void {
     watchProjectsDir(projectsFolder, prusaFolder);
     watchSettingsDir(projectsFolder, prusaFolder);
 
-    // Ensure all is generated since last run
-    await generateAll(projectsFolder, settings);
+    // Bootstrap with a mass upload if not already run
+    if (!gcodeWasInitialized) {
+        await generateAll(projectsFolder, settings);
+    }
 })();
