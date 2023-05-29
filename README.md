@@ -84,7 +84,7 @@ Warning! Creating lots of .ini settings produces exponential permutations of gco
 
 Simply add a new .3mf file anywhere in your projects folder and it will be immediately sliced against all `settings/` permutations and show up in the gcode/ folder.
 
-## (Optional): Continous Delivery + "Live Reload" upload to printers
+## (Optional): "Live Reload" upload to printers
 
 Simply save a PrusaSlicer project to auto-upload to all your printers!
 
