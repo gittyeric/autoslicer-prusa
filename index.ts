@@ -334,6 +334,6 @@ function watchSettingsDir(projectsFolder: string, prusaFolder: string): void {
     if (!gcodeWasInitialized) {
         await generateAll(projectsFolder, settings);
     } else {
-        console.info(`Resuming from last run, to force a mass re-generate + upload, delete ${gcodeFolder}`);
+        console.info(`Resuming from last run, to force a mass re-generate + upload, delete ${gcodeFolder} and re-run or change a profile in Prusaslicer`);
     }
 })();
