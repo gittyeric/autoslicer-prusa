@@ -200,10 +200,7 @@ async function triggerRsyncUploads(gcodeFolder: string) {
 }
 
 async function triggerRsyncUpload(projectsFolder, gcodeFile: string) {
-    console.log('' + JSON.stringify(projectsFolder, null, 2));
-    console.log('' + JSON.stringify(gcodeFile, null, 2));
     const destFolder = path.dirname(gcodeFile).replace(projectsFolder + '/gcode', '');
-    console.log('' + JSON.stringify(destFolder, null, 2));
     const pendingUploads = rsyncUploadTargets.map(async (target) => {
         const targetWrite = execLogError('rsync', [gcodeFile, (target + destFolder).replace('//', '/')]);
         return targetWrite;
@@ -227,7 +224,7 @@ function findStaleGcodes(settings: Settings, projectsFolder: string, updatedProj
     const gcodeFiles = fs.readdirSync(updatedGcodeDir, { withFileTypes: true });
     const regex = new RegExp(`${projectName}_.*\-.*\-.*.gcode`);
     return gcodeFiles.filter((gf) => {
-        gf.isFile() && regex.test(gf.name)
+        gf.isFile() && (regex.test(gf.name) || gf.name === `${projectName}.gcode`)
     }).map((gf) => path.join(gf.path, gf.name));
 }
 
