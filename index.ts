@@ -173,9 +173,13 @@ async function generateAll(projectsFolder: string, settings: Settings, skipDelet
             for (const projectFile of projectFiles) {
                 await generateAllForProject(projectsFolder, settings, projectFile);
             }
-            await triggerRsyncUploads(projectsFolder + '/gcode');
             generateAllCompleteCount++;
             res(undefined);
+
+            // Ensure rsynced only after all chained regens are done
+            if (generateAllCompleteCount === generateAllRequestCount) {
+                await triggerRsyncUploads(projectsFolder + '/gcode');
+            }
         });
     });
 }
