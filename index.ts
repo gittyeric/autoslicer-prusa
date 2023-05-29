@@ -185,7 +185,7 @@ async function generateAll(projectsFolder: string, settings: Settings, skipDelet
 async function triggerRsyncUploads(gcodeFolder: string) {
     let count = 0;
     const pendingUploads = rsyncUploadTargets.map(async (target) => {
-        const targetWrite = execLogError('rsync', ['-r', '-t', gcodeFolder + '/', target]);
+        const targetWrite = execLogError('rsync', ['-r', '-t', '--delete', gcodeFolder + '/', target]);
         targetWrite.then(() => { console.info(`autoslice: Done full-syncing with ` + target) });
         count++;
         // Wait for the rsync write every X concurrent runs
@@ -254,8 +254,6 @@ function watchProjectsDir(projectsFolder: string, prusaFolder: string): void {
         }
     });
     console.info('autoslice: ' + `Listening for .3mf files in ${projectsFolder}`);
-    //process.on('SIGINT', watcher.close);
-    //process.on('SIGTERM', watcher.close);
 }
 
 function watchSettingsDir(projectsFolder: string, prusaFolder: string): void {
@@ -266,17 +264,13 @@ function watchSettingsDir(projectsFolder: string, prusaFolder: string): void {
             return file.endsWith('.ini');
         },
     }, async function (evt, updatedFilename) {
-        // If removing a .ini file, just ignore
-        if (evt === 'remove') {
-            return;
-        }
         if (updatedFilename.startsWith(prusaFolder + '/printer/') ||
             updatedFilename.startsWith(prusaFolder + '/print/') ||
             updatedFilename.startsWith(prusaFolder + '/filament/')) {
             console.info('autoslice: ' + `Regenerating all in response to ${updatedFilename} changing`);
             const settings = getSettings(prusaFolder);
             // Delete all and regenerate some if global settings changed at all
-            await generateAll(projectsFolder, settings, true);
+            await generateAll(projectsFolder, settings);
         }
     });
     console.info('autoslice: ' + `Listening for .ini files in ${prusaFolder}`);
