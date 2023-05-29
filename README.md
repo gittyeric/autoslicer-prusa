@@ -98,3 +98,7 @@ Edit `index.ts` to include the list of SSH addresses to upload to (hint: you sho
 If you use Octoprint or Linux to run your printer, you can also tie the gcode generation event to auto-upload the file to all your Octoprint bots using it's built-in folder watch feature.  By default, Octoprint checks for incoming gcode files (after [manually enabling this feature](https://community.octoprint.org/t/watched-folder-doesnt-run-as-well/14618/4)) at `/home/pi/.octoprint/watched`, so you can use the above section to configure appropriate targets such as `pi@10.10.10.10:/home/pi/.octoprint/watched`
 
 Note that massive amounts of files will slow down Octoprint quite a bit (at least when not printing) with plugins like PrintGenius installed.
+
+## Resetting all gcode files
+
+If you wind up with lots of stale files on your printers, delete your project directories remotely then delete the `gcode` folder in your projects folder.  Restarting autoslicer will then regenerate all gcode files fresh from your current Prusaslicer profiles and project files.

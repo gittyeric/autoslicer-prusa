@@ -189,7 +189,7 @@ async function triggerRsyncUploads(gcodeFolder: string) {
     let count = 0;
     const pendingUploads = rsyncUploadTargets.map(async (target) => {
         const targetWrite = execLogError('rsync', ['-r', '-t', '--delete', gcodeFolder + '/', target]);
-        targetWrite.then(() => { console.info(`autoslice: Done full-syncing with ` + target) });
+        targetWrite.then(() => { console.info(`autoslice: Done re-syncing with ` + target) });
         count++;
         // Wait for the rsync write every X concurrent runs
         if (count % 10 === 0) {
