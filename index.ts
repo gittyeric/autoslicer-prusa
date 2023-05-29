@@ -154,7 +154,7 @@ function _deleteAllGcodes(gcodeFolder: string) {
 }
 
 // Destroy and re-create the entire projectsFolder, guaranteed to only run 1 at a time
-async function generateAll(projectsFolder: string, settings: Settings) {
+async function generateAll(projectsFolder: string, settings: Settings, skipDelete: boolean = false) {
     // Don't even bother if too many pending requests to regenerate all
     if (generateAllRequestCount - 1 > generateAllCompleteCount) {
         console.warn('Throttling nuclear regenerate and upload');
@@ -165,7 +165,9 @@ async function generateAll(projectsFolder: string, settings: Settings) {
     // Ensure generateAll can only be called once at a time!
     generateAllLock = generateAllLock.then(() => {
         return new Promise(async (res) => {
-            _deleteAllGcodes(projectsFolder + '/gcode');
+            if (!skipDelete) {
+                _deleteAllGcodes(projectsFolder + '/gcode');
+            }
             // Walk all files that end with .3mf
             const projectFiles = walk3mfSync(projectsFolder);
             for (const projectFile of projectFiles) {
@@ -274,7 +276,7 @@ function watchSettingsDir(projectsFolder: string, prusaFolder: string): void {
             console.info('autoslice: ' + `Regenerating all in response to ${updatedFilename} changing`);
             const settings = getSettings(prusaFolder);
             // Delete all and regenerate some if global settings changed at all
-            await generateAll(projectsFolder, settings);
+            await generateAll(projectsFolder, settings, true);
         }
     });
     console.info('autoslice: ' + `Listening for .ini files in ${prusaFolder}`);
