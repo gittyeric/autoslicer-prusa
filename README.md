@@ -59,7 +59,7 @@ Where:
 `<my-prusaslicer-config-location>` is the location PrusaSlicer takes you to when navigating to Help -> Show Configuration Folder.
 `<my-absolute-projects-folder-location>` is the folder containing your PrusaSlicer .3mf project files (subfolders will also count).
 
-If you see issues such as "Command not found: prusa-slicer", change `prusaSlicerCmd` in `config.ts` to whatever command works for your terminal (ex. `prusa-slicer-console` or `slic3r`).
+If you see issues such as "Command not found: prusa-slicer", change `prusaSlicerCmd` in `index.ts` to whatever command works for your terminal (ex. `prusa-slicer-console` or `slic3r`).
 
 ## Running forever in Unix systems
 
@@ -87,7 +87,7 @@ Simply add a new .3mf file anywhere in your projects folder and it will be immed
 
 Simply save a PrusaSlicer project to auto-upload to all your printers!
 
-Edit `config.ts` to include the list of SSH addresses to upload to (hint: you should use `ssh-copy-id` so your printer trusts your local Printer for SSH connections).  Whatever address(es) you use to access your printer(s) with ssh (ex. ssh `pi@myprinter.local`), add to the `rsyncUploadTargets` list.  Alternatively, you can specify a comma-separated `targets` argument on a per-command basis instead of modifying `config.ts`:
+Edit `index.ts` to include the list of SSH addresses to upload to (hint: you should use `ssh-copy-id` so your printer trusts your local Printer for SSH connections).  Whatever address(es) you use to access your printer(s) with ssh (ex. ssh `pi@myprinter.local`), add to the `rsyncUploadTargets` list.  Alternatively, you can specify a comma-separated `targets` argument on a per-command basis instead of modifying `config.ts`:
 
 `npm --targets="pi@printer1.local,pi@10.10.10.10" --prusa=<my-prusaslicer-config-location> --project="<my-absolute-projects-folder-location>" start`
 

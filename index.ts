@@ -1,11 +1,13 @@
 import watch from "node-watch";
 import fs from 'fs';
 import path from 'path';
-import { ExecaChildProcess, execa } from 'execa';
+import { execa } from 'execa';
 
+// The terminal / command line program to invoke for slicing, ex. 'prusa-slicer-console'
 export const prusaSlicerCmd: string = 'prusa-slicer';
 
 // Add any targets that your machine can successfully access with ssh, followed by :<absolute-remote-folder-location>
+// Can also merge in per-run targets as script inputs, see README.md
 export const rsyncUploadTargets: string[] = [
     //'pi@myprinter.local:/home/pi/.octoprint/watched',
     //'pi@10.10.10.10:/home/pi/.octoprint/watched',
