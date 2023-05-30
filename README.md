@@ -4,7 +4,7 @@ Never manually slice an STL again!  Upon saving your PrusaSlicer project file, g
 
 ## How it works
 
-Given a projects folder that has some arbitrary structure, a mirror "gcode" folder will be generated that matches all your project files, but may contain extra gcode outputs suffixed with `"myProject/myPart-<Printer>-<Filament>-<PrintSettings>.gcode"`.  This script reads your PrusaSlicer's configuration directory automatically to generate all permutations of gcode you could ever care to generate, here's an example project folder:
+Given a projects folder that has some arbitrary structure, a mirror "gcode" folder will be generated that matches all your project files, but may contain extra gcode outputs under `"myProject/gcode/<Printer>/myPart_<Filament>-<PrintSettings>.gcode"`.  This script reads your PrusaSlicer's configuration directory automatically to generate all permutations of gcode you could ever care to generate, here's an example project folder:
 
 ```
 <Root Project folder>
@@ -22,21 +22,27 @@ and would produce the following output structure:
 ```
 <Root Project folder>
 - gcode
-  - myProject1
-    - part1-myPrinter1-pla-custom1.gcode
-    - part1-myPrinter2-pla-custom1.gcode
-    - part1-myPrinter1-petg-custom1.gcode
-    - part1-myPrinter2-petg-custom1.gcode
-    - part1-myPrinter1-petg-custom2.gcode
-    - part1-myPrinter2-petg-custom2.gcode
-    ... (More excluded)
-  - myProject2
-    - part1-myPrinter1-pla-custom1.gcode
-    - part1-myPrinter2-pla-custom1.gcode
-    - part1-myPrinter1-petg-custom1.gcode
-    - part1-myPrinter2-petg-custom1.gcode
-    - part1-myPrinter1-petg-custom2.gcode
-    - part1-myPrinter2-petg-custom2.gcode
+  - myPrinter1
+    - myProject1
+      - part1-pla-custom1.gcode
+      - part1-petg-custom1.gcode
+      - part1-petg-custom2.gcode
+      ...
+    - myProject2
+      - part1-pla-custom1.gcode
+      - part1-petg-custom1.gcode
+      - part1-petg-custom2.gcode
+      ...
+  - myPrinter2
+    - myProject1
+      - part1-pla-custom1.gcode
+      - part1-petg-custom1.gcode
+      - part1-petg-custom2.gcode
+      ...
+    - myProject2
+      - part1-pla-custom1.gcode
+      - part1-petg-custom1.gcode
+      - part1-petg-custom2.gcode
     ... (More excluded)
 ```
 
@@ -92,10 +98,15 @@ Edit `index.ts` to include the list of SSH addresses to upload to (hint: you sho
 
 `npm --targets="pi@printer1.local,pi@10.10.10.10" --prusa=<my-prusaslicer-config-location> --project="<my-absolute-projects-folder-location>" start`
 
+### Tagging printers for minimal uploads
 
-## Octoprint End-to-end Automation
+In addition to specifying upload targets, you can append a `#[tag1][tag2]` suffix to ensure that gcodes are only uploaded to printers that support it.  Let's say you have Prusa Mk2 and Mk3 profiles called `mk2` and `mk3`, but also a generic `mk` printer profile that works with both.  You can tag the upload targets so that `mk3` gcodes never end up on `mk2` machines but both can receive `mk`'s with something like:
 
-If you use Octoprint or Linux to run your printer, you can also tie the gcode generation event to auto-upload the file to all your Octoprint bots using it's built-in folder watch feature.  By default, Octoprint checks for incoming gcode files (after [manually enabling this feature](https://community.octoprint.org/t/watched-folder-doesnt-run-as-well/14618/4)) at `/home/pi/.octoprint/watched`, so you can use the above section to configure appropriate targets such as `pi@10.10.10.10:/home/pi/.octoprint/watched`
+`npm --targets="pi@mk2.local#[mk][mk2],pi@mk3.local#[mk][mk3]" --prusa=<my-prusaslicer-config-location> --project="<my-absolute-projects-folder-location>" start`
+
+### Octoprint End-to-end Automation
+
+If you use Octoprint or Linux to run your printer, you can also tie the gcode generation event to auto-upload the file to all your Octoprint bots using it's built-in folder watch feature.  By default, Octoprint checks for incoming gcode files (after [manually enabling this feature](https://community.octoprint.org/t/watched-folder-doesnt-run-as-well/14618/4)) at `/home/pi/.octoprint/watched`, so you can use the Live Reaload section above to configure appropriate targets such as `pi@10.10.10.10:/home/pi/.octoprint/watched`
 
 Note that massive amounts of files will slow down Octoprint quite a bit (at least when not printing) with plugins like PrintGenius installed.
 
