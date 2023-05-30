@@ -28,7 +28,7 @@ type GcodeMeta = {
     settings: [string, string, string],
 }
 
-let generateAllLock: Promise<unknown> = Promise.resolve(0);
+let regenerateLock: Promise<unknown> = Promise.resolve(0);
 let generateAllRequestCount = 0;
 let generateAllCompleteCount = 0;
 
@@ -129,23 +129,6 @@ function findAllGcodePermutations(projectsFolder: string, settings: Settings, fi
     return metas;
 }
 
-async function generateAllForProject(projectsFolder: string, settings: Settings, file3mf: string, dirtySetting?: string) {
-    console.info('autoslice: ' + `Slicing ${file3mf}`);
-    const gcodeMetas = findAllGcodePermutations(projectsFolder, settings, file3mf).filter((meta) => !dirtySetting || meta.settings.includes(dirtySetting));
-    const pendingSlices = gcodeMetas.map(async (gcodeMeta) => {
-        // Ensure directory exists recursively
-        fs.mkdirSync(path.dirname(gcodeMeta.file), { recursive: true });
-        return generateCmd(settings, gcodeMeta);
-    });
-    try {
-        await Promise.all(pendingSlices);
-    } catch (e) {
-        console.error('autoslice: ' + JSON.stringify(e));
-    }
-
-    return gcodeMetas;
-}
-
 function _deleteAllGcodes(gcodeFolder: string) {
     if (fs.existsSync(gcodeFolder)) {
         console.warn('autoslice: ' + `Deleting all gcode in ${gcodeFolder}`);
@@ -167,8 +150,25 @@ function _deleteGcodesBySetting(gcodeFolder: string, dirtySetting: string) {
     }
 }
 
+async function regenerateAllForProject(projectsFolder: string, settings: Settings, file3mf: string, dirtySetting?: string) {
+    console.info('autoslice: ' + `Slicing ${file3mf}`);
+    const gcodeMetas = findAllGcodePermutations(projectsFolder, settings, file3mf).filter((meta) => !dirtySetting || meta.settings.includes(dirtySetting));
+    const pendingSlices = gcodeMetas.map(async (gcodeMeta) => {
+        // Ensure directory exists recursively
+        fs.mkdirSync(path.dirname(gcodeMeta.file), { recursive: true });
+        return generateCmd(settings, gcodeMeta);
+    });
+    try {
+        await Promise.all(pendingSlices);
+    } catch (e) {
+        console.error('autoslice: ' + JSON.stringify(e));
+    }
+
+    return gcodeMetas;
+}
+
 // Destroy and re-create the entire projectsFolder, guaranteed to only run 1 at a time
-async function generateAll(projectsFolder: string, settings: Settings, dirtySetting?: string) {
+async function regenerateAll(projectsFolder: string, settings: Settings) {
     // Don't even bother if too many pending requests to regenerate all
     if (generateAllRequestCount - 1 > generateAllCompleteCount) {
         console.warn('Throttling nuclear regenerate and upload');
@@ -177,41 +177,41 @@ async function generateAll(projectsFolder: string, settings: Settings, dirtySett
 
     generateAllRequestCount++;
     // Ensure generateAll can only be called once at a time!
-    generateAllLock = generateAllLock.then(() => {
+    regenerateLock = regenerateLock.then(() => {
         return new Promise(async (res) => {
             const gcodeDir = projectsFolder + '/gcode';
-            const isSecondarySettingUpdate = settings.printSettings.includes(dirtySetting || '') || settings.filaments.includes(dirtySetting || '');
-            let srcSuffix = '';
-            let targetSuffix = '';
 
             // Walk all files that end with .3mf
             const projectFiles = walk3mfSync(projectsFolder);
-
-            // Case 1: Dirty printer, delete and regen printer directory
-            if (settings.printers.includes(dirtySetting || '')) {
-                _deleteAllGcodes(gcodeDir + '/' + dirtySetting);
-                srcSuffix = `/` + dirtySetting;
-                targetSuffix = '/' + dirtySetting;
-            }
-            // Case 2: Other settings type embedded in gcode filename
-            else if (isSecondarySettingUpdate) {
-                _deleteGcodesBySetting(gcodeDir, dirtySetting!);
-            }
-            // Case 3: Nuke everything
-            else {
-                _deleteAllGcodes(gcodeDir);
-            }
+            _deleteAllGcodes(gcodeDir);
 
             for (const projectFile of projectFiles) {
-                await generateAllForProject(projectsFolder, settings, projectFile, dirtySetting);
+                await regenerateAllForProject(projectsFolder, settings, projectFile);
             }
             generateAllCompleteCount++;
             // Ensure rsynced only after all chained regens are done
             if (generateAllCompleteCount === generateAllRequestCount) {
-                await triggerRsyncUploads(gcodeDir, settings, srcSuffix, targetSuffix);
+                await uploadDirectory(gcodeDir, settings);
             }
             res(undefined);
         });
+    });
+}
+
+async function regenerateUpdatedSetting(projectsFolder: string, settings: Settings, dirtySetting: string) {
+    // Ensure generateAll can only be called once at a time!
+    return new Promise(async (res) => {
+        _deleteGcodesBySetting(projectsFolder + '/gcode', dirtySetting);
+        // Walk all files that end with .3mf
+        const projectFiles = walk3mfSync(projectsFolder);
+        const regenerated: GcodeMeta[] = [];
+        for (const projectFile of projectFiles) {
+            regenerated.push(...await regenerateAllForProject(projectsFolder, settings, projectFile, dirtySetting));
+        }
+        for (const gcodeFile of regenerated) {
+            await uploadFile(projectsFolder, settings, gcodeFile);
+        }
+        res(undefined);
     });
 }
 
@@ -231,11 +231,11 @@ function getGcodePrinterRsyncExclusions(target: string, settings: Settings, gcod
 
 // Leave the smarts of diff tracking to rsync and just bulk rsync
 // all generated gcode to all rsync targets
-async function triggerRsyncUploads(gcodeFolder: string, settings: Settings, srcSuffix: string, targetSuffix: string = '') {
+async function uploadDirectory(gcodeFolder: string, settings: Settings) {
     let count = 0;
     const pendingUploads = rsyncUploadTargets.map(async (target) => {
         const exclusions = getGcodePrinterRsyncExclusions(target, settings, gcodeFolder);
-        const targetWrite = execLogError('rsync', ['-r', '-t', '--delete', ...exclusions, gcodeFolder + srcSuffix + '/', target + targetSuffix]);
+        const targetWrite = execLogError('rsync', ['-r', '-t', '--delete', ...exclusions, gcodeFolder + '/', target]);
         targetWrite.then(() => { console.info(`autoslice: Done re-syncing with ` + target) });
         count++;
         // Wait for the rsync write every X concurrent runs
@@ -251,13 +251,17 @@ async function triggerRsyncUploads(gcodeFolder: string, settings: Settings, srcS
     }
 }
 
-async function triggerRsyncUpload(projectsFolder, settings: Settings, gcodeFile: string) {
+async function uploadFile(projectsFolder, settings: Settings, gcodeMeta: GcodeMeta) {
     const gcodeFolder = projectsFolder + '/gcode';
-    const destFolder = path.dirname(gcodeFile).replace(gcodeFolder, '');
+    const destFolder = path.dirname(gcodeMeta.file).replace(gcodeFolder, '');
     const pendingUploads = rsyncUploadTargets.map(async (target) => {
-        const exclusions = getGcodePrinterRsyncExclusions(target, settings, gcodeFolder);
-        const targetWrite = execLogError('rsync', ['-t', ...exclusions, gcodeFile, (target + destFolder).replace('//', '/')]);
-        return targetWrite;
+        // Conditionally run if target is compatible with printer
+        const whitelist = rsyncTargetToWhitelistedPrinters[target];
+        if (whitelist.includes(gcodeMeta.settings[0])) {
+            const targetWrite = execLogError('rsync', ['-t', gcodeMeta.file, (target + destFolder).replace('//', '/')]);
+            return targetWrite;
+        }
+        return null;
     });
     try {
         await Promise.all(pendingUploads);
@@ -299,9 +303,9 @@ function watchProjectsDir(projectsFolder: string, prusaFolder: string): void {
         }
         if (evt === 'update') {
             // If project file updated/added, regenerate
-            const gcodeFiles = (await generateAllForProject(projectsFolder, settings, updatedFilename)).map((g) => g.file);
+            const gcodeFiles = (await regenerateAllForProject(projectsFolder, settings, updatedFilename));
             for (const gcodeFile of gcodeFiles) {
-                triggerRsyncUpload(projectsFolder, settings, gcodeFile);
+                uploadFile(projectsFolder, settings, gcodeFile);
             }
         }
     });
@@ -323,7 +327,7 @@ function watchSettingsDir(projectsFolder: string, prusaFolder: string): void {
             const settings = getSettings(prusaFolder);
             // Delete all and regenerate some if global settings changed at all
             const updatedSetting = path.basename(updatedFilename).replace('.ini', '');
-            await generateAll(projectsFolder, settings, updatedSetting);
+            await regenerateUpdatedSetting(projectsFolder, settings, updatedSetting);
         }
     });
     console.info('autoslice: ' + `Listening for .ini files in ${prusaFolder}`);
@@ -400,7 +404,7 @@ function setRsyncTargets() {
 
     // Bootstrap with a mass upload if not already run
     if (!gcodeWasInitialized) {
-        await generateAll(projectsFolder, settings);
+        await regenerateAll(projectsFolder, settings);
     } else {
         console.info(`Resuming from last run, to force a mass re-generate + upload, delete ${gcodeFolder} and re-run or change a profile in Prusaslicer`);
     }
