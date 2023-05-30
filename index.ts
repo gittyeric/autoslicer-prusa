@@ -199,19 +199,21 @@ async function regenerateAll(projectsFolder: string, settings: Settings) {
 }
 
 async function regenerateUpdatedSetting(projectsFolder: string, settings: Settings, dirtySetting: string) {
-    // Ensure generateAll can only be called once at a time!
-    return new Promise(async (res) => {
-        _deleteGcodesBySetting(projectsFolder + '/gcode', dirtySetting);
-        // Walk all files that end with .3mf
-        const projectFiles = walk3mfSync(projectsFolder);
-        const regenerated: GcodeMeta[] = [];
-        for (const projectFile of projectFiles) {
-            regenerated.push(...await regenerateAllForProject(projectsFolder, settings, projectFile, dirtySetting));
-        }
-        for (const gcodeFile of regenerated) {
-            await uploadFile(projectsFolder, settings, gcodeFile);
-        }
-        res(undefined);
+    // Ensure regenerateUpdatedSettings can only be called once at a time!
+    regenerateLock = regenerateLock.then(() => {
+        return new Promise(async (res) => {
+            _deleteGcodesBySetting(projectsFolder + '/gcode', dirtySetting);
+            // Walk all files that end with .3mf
+            const projectFiles = walk3mfSync(projectsFolder);
+            const regenerated: GcodeMeta[] = [];
+            for (const projectFile of projectFiles) {
+                regenerated.push(...await regenerateAllForProject(projectsFolder, settings, projectFile, dirtySetting));
+            }
+            for (const gcodeFile of regenerated) {
+                await uploadFile(projectsFolder, settings, gcodeFile);
+            }
+            res(undefined);
+        });
     });
 }
 
