@@ -291,7 +291,7 @@ function findStaleGcodes(settings: Settings, projectsFolder: string, updatedProj
 function watchProjectsDir(projectsFolder: string, prusaFolder: string): void {
     const watcher = watch.default(projectsFolder, {
         recursive: true,
-        delay: 250,
+        delay: 400,
         filter(file, skip) {
             return file.endsWith('.3mf');
         },
