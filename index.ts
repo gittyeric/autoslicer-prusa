@@ -217,9 +217,17 @@ async function regenerateUpdatedSetting(projectsFolder: string, settings: Settin
     });
 }
 
-// Get a ban list of printer gcode subdirs that are not compatible with
-// a target's printer tags
-function getGcodePrinterRsyncExclusions(target: string, settings: Settings, gcodeFolder: string): string[] {
+function getInvalidPrintSettingsForTarget(target: string, settings: Settings): string[] {
+    // Filter out incompatible printers
+    //const gcodeFolders = fs.readdirSync(gcodeFolder, { withFileTypes: true });
+    const invalidPrinters = getInvalidPrintSettingsForTarget(target, settings);
+    return invalidPrinters.map((printer) => {
+        const invalidPrintSettings = settings.printSettings.filter((ps) => ps.startsWith(`${printer}-`));
+        return invalidPrintSettings;
+    }).flat();
+}
+
+function getInvalidPrintersForTarget(target: string, settings: Settings): string[] {
     const whitelist = rsyncTargetToWhitelistedPrinters[target];
     if (!whitelist) {
         return [];
@@ -227,8 +235,44 @@ function getGcodePrinterRsyncExclusions(target: string, settings: Settings, gcod
     // Filter out incompatible printers
     //const gcodeFolders = fs.readdirSync(gcodeFolder, { withFileTypes: true });
     const invalidPrinters = settings.printers.map((printer) => !whitelist.includes(printer) ? printer : null).filter((f) => !!f) as string[];
+    return invalidPrinters;
+}
+
+// Get a ban list of printer gcode subdirs that are not compatible with
+// a target's printer tags
+function getGcodePrinterDirRsyncExclusions(target: string, settings: Settings): string[] {
+    const invalidPrinters = getInvalidPrintersForTarget(target, settings);
     const rsyncArgs = invalidPrinters.map((invalid) => ['--exclude', invalid]).flat();
     return [...rsyncArgs, '--exclude', '_'];
+}
+
+function getGcodePrintSettingsRsyncExclusions(target: string, settings: Settings): string[] {
+    const invalidPrintSettings = getInvalidPrintSettingsForTarget(target, settings);
+    const rsyncArgs = invalidPrintSettings.map((printSetting) => ['--exclude', `**/*.${printSetting}.gcode`]).flat();
+    return [...rsyncArgs];
+}
+
+function getGcodeRsyncExclusions(target: string, settings: Settings): string[] {
+    return [...getGcodePrinterDirRsyncExclusions(target, settings), ...getGcodePrintSettingsRsyncExclusions(target, settings)];
+}
+
+
+async function isValidGeneration(gcodeMeta: GcodeMeta, settings: Settings) {
+    // Grab all possible printer tags
+    const tags: string[] = [2];
+    // Build valid tag-to-
+}
+
+async function isTargetCompatible(target: string, settings: Settings, gcodeMeta: GcodeMeta) {
+    if (!isValidGeneration(gcodeMeta, settings)) {
+        return false;
+    }
+
+    const whitelist = rsyncTargetToWhitelistedPrinters[target] || [...settings.printers];
+    if (!whitelist) {
+        return [];
+    }
+    return
 }
 
 // Leave the smarts of diff tracking to rsync and just bulk rsync
@@ -236,7 +280,7 @@ function getGcodePrinterRsyncExclusions(target: string, settings: Settings, gcod
 async function uploadDirectory(gcodeFolder: string, settings: Settings) {
     let count = 0;
     const pendingUploads = rsyncUploadTargets.map(async (target) => {
-        const exclusions = getGcodePrinterRsyncExclusions(target, settings, gcodeFolder);
+        const exclusions = getGcodeRsyncExclusions(target, settings);
         const targetWrite = execLogError('rsync', ['-r', '-t', '--delete', ...exclusions, gcodeFolder + '/', target]);
         targetWrite.then(() => { console.info(`autoslice: Done re-syncing with ` + target) });
         count++;
@@ -257,11 +301,14 @@ async function uploadFile(projectsFolder, settings: Settings, gcodeMeta: GcodeMe
     const gcodeFolder = projectsFolder + '/gcode';
     const destFolder = path.dirname(gcodeMeta.file).replace(gcodeFolder, '');
     const pendingUploads = rsyncUploadTargets.map(async (target) => {
+        if (isTargetCompatible(target, settings, gcodeMeta)) {
+            const targetWrite = execLogError('rsync', ['-t', gcodeMeta.file, (target + destFolder).replace('//', '/')]);
+            return targetWrite;
+        }
+        return null;
         // Conditionally run if target is compatible with printer
         const whitelist = rsyncTargetToWhitelistedPrinters[target];
         if (whitelist.includes(gcodeMeta.settings[0])) {
-            const targetWrite = execLogError('rsync', ['-t', gcodeMeta.file, (target + destFolder).replace('//', '/')]);
-            return targetWrite;
         }
         return null;
     });

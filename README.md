@@ -68,6 +68,10 @@ Where:
 
 If you see issues such as "Command not found: prusa-slicer", change `prusaSlicerCmd` in `index.ts` to whatever command works for your terminal (ex. `prusa-slicer-console` or `slic3r`).
 
+## Types of settings
+
+Prusaslicer divides settings into 3 categories: Printer, Print, and Filament settings.  All permutations of these 3 you define in Prusaslicer will be auto-generated and/or uploaded.  You can restrict uploading so that only generated Gcode intended for certain Printer/Print settings will be sent to compatible printers.
+
 ## Running forever in Unix systems
 
 The easiest way to install this program to run 24/7 and listen for file changes in a lightweight way is to add the script you are successfully running in step 3 to your crontab with:
@@ -100,9 +104,14 @@ Edit `index.ts` to include the list of SSH addresses to upload to (hint: you sho
 
 ### Tagging printers for minimal uploads
 
-In addition to specifying upload targets, you can append a `#[tag1][tag2]` suffix to ensure that gcodes are only uploaded to printers that support it.  Let's say you have Prusa Mk2 and Mk3 profiles called `mk2` and `mk3`, but also a generic `mk` printer profile that works with both.  You can tag the upload targets so that `mk3` gcodes never end up on `mk2` machines but both can receive `mk`'s with something like:
+In addition to specifying upload targets, you can append a `#[tag1][tag2]` suffix to ensure that gcodes are only uploaded to printers that support it.  Let's say you have Prusa Mk2 and Mk3 Printer settings called `mk2` and `mk3`, but also a generic `mk` Printer profile that works with both.  You can tag the upload targets so that `mk3` gcodes never end up on `mk2` machines but both can receive `mk`'s with something like:
 
 `npm --targets="pi@mk2.local#[mk][mk2],pi@mk3.local#[mk][mk3]" --prusa=<my-prusaslicer-config-location> --project="<my-absolute-projects-folder-location>" start`
+
+#### Restricting Print Settings to only some Printers
+
+If you want to restrict the upload of some _Print_ settings to only upload to some Printer types, you can follow the naming convention of `<Printer name>`-somePrintSettingsName and any gcode using somePrintSettingsName _Print_ settings will only be uploaded to `<Printer name>` printers.  Extending the example above, creating print settings named `mk2-fast` and `mk3-slow` will only upload gcodes with those print settings to `mk2` or `mk3` printers respectively.
+
 
 ### Octoprint End-to-end Automation
 
