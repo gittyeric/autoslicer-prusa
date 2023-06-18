@@ -110,7 +110,7 @@ In addition to specifying upload targets, you can append a `#[tag1][tag2]` suffi
 
 #### Restricting Print Settings to only some Printers
 
-If you want to restrict the upload of some _Print_ settings to only upload to some Printer types, you can follow the naming convention of `<Printer name>`-somePrintSettingsName and any gcode using somePrintSettingsName _Print_ settings will only be uploaded to `<Printer name>` printers.  Extending the example above, creating print settings named `mk2-fast` and `mk3-slow` will only upload gcodes with those print settings to `mk2` or `mk3` printers respectively.
+If you want to restrict the upload of some _Print_ settings to only upload to some Printer types, you can follow the naming convention of `<Printer name>-`somePrintSettingsName and any gcode using somePrintSettingsName _Print_ settings will only be uploaded to `<Printer name>` printers.  Extending the example above, creating print settings named `mk2-fast` and `mk3-slow` will only upload gcodes with those print settings to `mk2` or `mk3` printers respectively.  If none of your print settings start with a matching printer name, all print settings will be matched to all printers.
 
 
 ### Octoprint End-to-end Automation
@@ -121,4 +121,4 @@ Note that massive amounts of files will slow down Octoprint quite a bit (at leas
 
 ## Resetting all gcode files
 
-If you wind up with lots of stale files on your printers, delete your project directories remotely then delete the `gcode` folder in your projects folder.  Restarting autoslicer will then regenerate all gcode files fresh from your current Prusaslicer profiles and project files.
+If you wind up with lots of stale files on your printers, delete your project directories remotely then delete the `gcode` folder in your projects folder or run with the `--nuke=true` option.  Autoslicer will then regenerate all gcode files fresh from your current Prusaslicer profiles and project files.
